@@ -25,10 +25,7 @@ const productSchema = new mongoose.Schema({
     required: true,
     minlength: 2,
     maxlength: 50,
-    validate: {
-      validator: (value) => regex.name.test(value),
-      message: 'El nombre del producto solo puede contener letras, números y espacios.'
-    }
+    match: regex.name
   },
   price: {
     type: Number,
@@ -47,21 +44,18 @@ const productSchema = new mongoose.Schema({
     ref: 'Category',
     default: null
   },
-  images: [
-    {
-    type: String,
-    required: true,
-    }
-  ],
+  images: {
+    type: [String],
+    default: [],
+    minlength: 1,
+    maxlength: 3,
+  },
   description: {
     type: String,
     required: true,
     minlength: 2,
     maxlength: 500,
-    validate: {
-      validator: (value) => regex.description.test(value),
-      message: 'La descripción del producto solo puede contener letras, números, espacios y signos de puntuación.'
-    }
+    match: regex.description
   },
   discount: {
     type: Number,
@@ -86,6 +80,7 @@ const productSchema = new mongoose.Schema({
     default: false
   }
 });
+
 
 productSchema.plugin(mongoosePaginate);
 

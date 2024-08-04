@@ -1,104 +1,115 @@
-const Product = require('../models/productModels'); // Import the Product model
-const { check, validationResult } = require('express-validator');
+const Product = require('../models/productModels');
+const Category = require('../models/categoryModels');
+const regex = require('../tools/regex');
+const options = require('../tools/options')
 
-// Product controller
 const productController = {
-  // Create a product
   createProduct: async (req, res) => {
-    const errors = validationResult(req); // Check for validation errors
-
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
-    const newProduct = new Product(req.body); // Create a new product instance
-
     try {
-      await newProduct.save(); // Save the product to the database
-      res.status(201).json({ message: 'Producto creado correctamente', product: newProduct });
+      if(!regex.name.test(req.body.name)){
+        return res.status(500).json({message: "El nombre es inválido. Debe contener solo letras y espacios."})
+      }
+      if(!regex.description.test(req.body.description)){
+        return res.status(500).json({message: "La descripción debe tener un maximo de 500 caracteres."})
+      }
+      const categoryExists = await Category.findById(req.body.category);
+      if (!categoryExists) {
+        return res.status(404).json({ message: "Categoria no encontrada. Verifique el ID" });
+      }
+      const product = new Product(req.body, {img: req.file.path});
+      await product.save();
+      res.status(201).json(product);
     } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: 'Error al crear producto', error });
+      console.log(error);
+      res.status(500).json({ message: error.message });
     }
   },
 
-  // Get all products (with pagination)
   getProducts: async (req, res) => {
-    const options = {
-      page: parseInt(req.query.page) || 1, // Get page number from query or set default to 1
-      limit: parseInt(req.query.limit) || 10, // Get limit from query or set default to 10
-      sort: { creationDate: -1 }, // Sort by creation date descending
-      populate: 'category' // Populate the 'category' field
-    };
-
-    /*
-      Crear un filtro que permita buscar productos por nombre
-      Crear un filtro que permtia buscar productos por categoria
-    */
-
     try {
-      const products = await Product.paginate({}, options); // Use pagination plugin to get products
-      res.status(200).json(products);
+      options.page = Number(req.query.page) || 1;
+      options.limit = Number(req.query.limit) || 10;
+      const products = await Product.paginate({deleted: false}, options);
+      res.json(products);
     } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: 'Error al obtener productos', error });
+      console.log(error);
+      res.status(500).json({ message: error.message });
     }
   },
-
-  // Get a product by ID
+  
   getProductById: async (req, res) => {
-    const productId = req.params.id; // Get product ID from URL
-
     try {
-      const product = await Product.findById(productId).populate('category'); // Find product by ID and populate 'category' field
-
-      if (!product) {
-        return res.status(404).json({ message: 'Producto no encontrado' });
-      }
-
-      res.status(200).json({ product });
+      const product = await Product.paginate({deleted: false, _id: req.params.id}, options);
+      res.json(product);
     } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: 'Error al obtener producto', error });
+      console.log(error);
+      res.status(500).json({ message: error.message });
     }
   },
 
-  // Update a product
+  /*// Search products (for suggestions)
+  getProductsForSearch: async (req, res) => {
+    const { query } = req.query;
+    const searchRegex = new RegExp(query, 'i');
+    const products = await Product.find({ name: searchRegex }, { name: 1 }).limit(10);
+    res.status(200).json(products);
+  },*/
+  
   updateProduct: async (req, res) => {
-    const productId = req.params.id; // Get product ID from URL
-    const updates = req.body; // Get product updates
-
-    const options = { new: true }; // Return the updated product
-
     try {
-      const updatedProduct = await Product.findByIdAndUpdate(productId, updates, options).populate('category'); // Find and update product
-
-      if (!updatedProduct) {
-        return res.status(404).json({ message: 'Producto no encontrado' });
+      req.body.updatedAt = Date.now();
+      if(!regex.name.test(req.body.name)){
+        return res.status(500).json({message: "El nombre es inválido. Debe contener solo letras y espacios."})
       }
-
-      res.status(200).json({ message: 'Producto actualizado correctamente', product: updatedProduct });
+      if(!regex.description.test(req.body.description)){
+        return res.status(500).json({message: "La descripción debe tener un maximo de 500 caracteres."})
+      }
+      const categoryExists = await Category.findById(req.body.category);
+      if (!categoryExists) {
+        return res.status(404).json({ message: "Categoria no encontrada. Verifique el ID" });
+      }
+      const product = await Product.findByIdAndUpdate({_id: req.params.id, deleted: false}, req.body, {new: true});
+      const paginatedProduct = await Product.paginate({_id: product._id, deleted: false}, options);
+      res.json(paginatedProduct);
     } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: 'Error al actualizar producto', error });
+      console.log(error);
+      res.status(500).json({ message: error.message });
     }
   },
 
-  // Delete a product (soft delete)
-  deleteProduct: async (req, res) => {
-    const productId = req.params.id; // Get product ID from URL
-
+  submitImage: async (req, res) => {
     try {
-      const product = await Product.findByIdAndUpdate(productId, { delete: true }, { new: true }); // Find and soft delete product
-
-      if (!product) {
-        return res.status(404).json({ message: 'Producto no encontrado' });
+      console.log(req.files);
+      if(req.files.length === 0){
+        return res.status(500).json({message: "Imagen no encontrada"});
       }
-
-      res.status(200).json({ message: 'Producto eliminado correctamente', product });
+      const imgsArray = [];
+      req.files.map((file) => {
+        if(file.mimetype !== "image/png" && file.mimetype !== "image/jpg" && file.mimetype !== "image/jpeg"){
+          return res.status(500).json({message: `Imagen, ${file.filename}, no valida, solo se permite formato png, jpeg y jpg`});
+        }
+        if(file.size > 5000000 || file.size === 0){
+          return res.status(500).json({message: `Imagen, ${file.filename}, no valida, permitido 5MB max y no vacío`});
+        }
+        imgsArray.push(file.path);
+      });
+      const product = await Product.findByIdAndUpdate({_id: req.params.id, deleted: false}, {images: imgsArray}, {new: true});
+      const paginated = await Product.paginate({_id: product._id, deleted: false}, options);
+      res.status(201).json(paginated, { message: 'Imagen subida correctamente'});
     } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: 'Error al eliminar producto', error });
+      console.log(error);
+      res.status(500).json({ message: "Error al subir la imagen" });
+    }
+  },
+
+  deleteProduct: async (req, res) => {
+    try {
+      const product = await Product.findByIdAndUpdate({_id: req.params.id, deleted: false}, {deleted: true, deletedAt: Date.now()}, {new: true});
+      const paginatedProduct = await Product.paginate({_id: product._id, deleted: false}, options);
+      res.json(paginatedProduct);
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ message: error.message });
     }
   }
 };

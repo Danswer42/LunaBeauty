@@ -28,29 +28,20 @@ const userSchema = new mongoose.Schema({
     required: true,
     minlength: 2,
     maxlength: 50,
-    validate: {
-      validator: (value) => regex.name.test(value),
-      message: 'El nombre solo puede contener letras, números y espacios.'
-    }
+    match: regex.name
   },
   lastname: {
     type: String,
     required: true,
     minlength: 2,
     maxlength: 50,
-    validate: {
-      validator: (value) => regex.lastname.test(value),
-      message: 'El apellido solo puede contener letras, números y espacios.'
-    }
+    match: regex.lastname
   },
   phone: {
     type: String,
     required: true,
     unique: true,
-    validate: {
-      validator: (value) => regex.phone.test(value),
-      message: 'El teléfono debe tener un formato válido (entre 9 y 15 dígitos).'
-    }
+    match: regex.phone
   },
   image: {
     type: String,
@@ -61,25 +52,26 @@ const userSchema = new mongoose.Schema({
     required: true,
     unique: true,
     lowercase: true,
-    validate: {
-      validator: (value) => regex.email.test(value),
-      message: 'El correo electrónico debe tener un formato válido.'
-    }
+    match: regex.email
   },
   password: {
     type: String,
     required: true,
     minlength: 8,
-    validate: {
-      validator: (value) => regex.password.test(value),
-      message: 'La contraseña debe tener al menos 8 caracteres, incluir una letra minúscula, una mayúscula, un número y un símbolo especial.'
-    }
+    match: regex.password, 
   },
   rol: {
     type: mongoose.Schema.Types.ObjectId,
-    required: true 
+    required: true,
+    ref: "Rol",
+    default: null
   },
   purchases: {
+    type: Array,
+    ref: "Purchase",
+    default: []
+  },
+  cart:{
     type: Array,
     default: []
   },

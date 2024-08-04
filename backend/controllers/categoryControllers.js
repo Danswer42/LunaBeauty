@@ -1,98 +1,68 @@
-const Category = require('../models/categoryModels'); // Import the Category model
-const { check, validationResult } = require('express-validator');
+const Category = require('../models/categoryModels');
+const regex = require('../tools/regex');
+const options = require('../tools/options')
+require('path')
 
-// Category controller
 const categoryController = {
-  // Create a category
   createCategory: async (req, res) => {
-    const errors = validationResult(req); // Check for validation errors
-
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
-    const newCategory = new Category(req.body); // Create a new category instance
-
     try {
-      await newCategory.save(); // Save the category to the database
-      res.status(201).json({ message: 'Categoría creada correctamente', category: newCategory });
+      if(!regex.name.test(req.body.name)){
+        return res.status(500).json({message: "El nombre es inválido. Debe contener solo letras y espacios."})
+      }
+      const category = new Category(req.body);
+      await category.save();
+      res.status(201).json(category);
     } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: 'Error al crear categoría', error });
+      console.log(error);
+      res.status(500).json({ message: error.message });
     }
   },
 
-  // Get all categories (with pagination)
   getCategories: async (req, res) => {
-    const options = {
-      page: parseInt(req.query.page) || 1, // Get page number from query or set default to 1
-      limit: parseInt(req.query.limit) || 10, // Get limit from query or set default to 10
-      sort: { creationDate: -1 }, // Sort by creation date descending
-    };
-
     try {
-      const categories = await Category.paginate({}, options); // Use pagination plugin to get categories
-      res.status(200).json(categories);
+      options.page = Number(req.query.page) || 1;
+      options.limit = Number(req.query.limit) || 10;
+      const categories = await Category.paginate({deleted: false}, options);
+      res.json(categories);
     } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: 'Error al obtener categorías', error });
+      console.log(error);
+      res.status(500).json({ message: error.message });
     }
   },
 
-  // Get a category by ID
   getCategoryById: async (req, res) => {
-    const categoryId = req.params.id; // Get category ID from URL
-
     try {
-      const category = await Category.findById(categoryId); // Find category by ID
-
-      if (!category) {
-        return res.status(404).json({ message: 'Categoría no encontrada' });
-      }
-
-      res.status(200).json({ category });
+      const category = await Category.paginate({deleted: false, _id: req.params.id}, options);
+      res.json(category);
     } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: 'Error al obtener categoría', error });
+      console.log(error);
+      res.status(500).json({ message: error.message });
     }
   },
 
-  // Update a category
   updateCategory: async (req, res) => {
-    const categoryId = req.params.id; // Get category ID from URL
-    const updates = req.body; // Get category updates
-
-    const options = { new: true }; // Return the updated category
-
     try {
-      const updatedCategory = await Category.findByIdAndUpdate(categoryId, updates, options); // Find and update category
-
-      if (!updatedCategory) {
-        return res.status(404).json({ message: 'Categoría no encontrada' });
+      req.body.updatedAt = Date.now();
+      if(!regex.name.test(req.body.name)){
+        return res.status(500).json({message: "El nombre es inválido. Debe contener solo letras y espacios."})
       }
-
-      res.status(200).json({ message: 'Categoría actualizada correctamente', category: updatedCategory });
+      const category = await Category.findByIdAndUpdate({_id: req.params.id, deleted: false}, req.body, {new: true});
+      const paginatedCategory = await Category.paginate({_id: category._id, deleted: false}, options);
+      res.json(paginatedCategory);
     } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: 'Error al actualizar categoría', error });
+        console.log(error);
+        res.status(500).json({ message: error.message });
     }
   },
 
-  // Delete a category (soft delete)
   deleteCategory: async (req, res) => {
-    const categoryId = req.params.id; // Get category ID from URL
-
     try {
-      const category = await Category.findByIdAndUpdate(categoryId, { delete: true }, { new: true }); // Find and soft delete category
-
-      if (!category) {
-        return res.status(404).json({ message: 'Categoría no encontrada' });
-      }
-
-      res.status(200).json({ message: 'Categoría eliminada correctamente', category });
+      const category = await Category.findByIdAndUpdate({_id: req.params.id, deleted: false}, {deleted: true, deletedAt: Date.now()}, {new: true});
+      const paginatedCategory = await Category.paginate({_id: category._id, deleted: false}, options);
+      res.json(paginatedCategory);
     } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: 'Error al eliminar categoría', error });
+      console.log(error);
+      res.status(500).json({ message: error.message });
     }
   }
 };

@@ -20,10 +20,7 @@ const rolSchema = new mongoose.Schema({
     required: true,
     minlength: 2,
     maxlength: 50,
-    validate: {
-      validator: (value) => regex.name.test(value),
-      message: 'El nombre solo puede contener letras, números y espacios.'
-    },
+    match: regex.name,
     unique: true
   },
   creationDate: {

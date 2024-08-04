@@ -1,79 +1,67 @@
 const Rol = require('../models/rolModels'); // Importar el modelo Rol
+const regex = require('../tools/regex');
+const options = require('../tools/options')
 
-// Controlador de roles
 const rolController = {
-  // Crear un rol
-  crearRol: async (req, res) => {
-    const nuevoRol = new Rol({ nombre: req.body.nombre }); // Crear una nueva instancia de Rol
-
+  createRol: async (req, res) => {
     try {
-      await nuevoRol.save(); // Guardar el rol en la base de datos
-      res.status(201).json({ message: 'Rol creado correctamente', rol: nuevoRol });
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: 'Error al crear el rol', error });
-    }
-  },
-
-  // Obtener todos los roles
-  obtenerRoles: async (req, res) => {
-    try {
-      const roles = await Rol.find(); // Buscar todos los roles en la base de datos
-      res.status(200).json({ roles });
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: 'Error al obtener roles', error });
-    }
-  },
-
-  // Obtener un rol por ID
-  obtenerRolPorId: async (req, res) => {
-    const rolId = req.params.id; // Obtener el ID del rol de la URL
-
-    try {
-      const rol = await Rol.findById(rolId); // Buscar el rol por ID en la base de datos
-
-      if (!rol) {
-        return res.status(404).json({ message: 'Rol no encontrado' });
+      if(!regex.name.test(req.body.name)){
+        return res.status(500).json({message: "El nombre es inválido. Debe contener solo letras y espacios."})
       }
-
-      res.status(200).json({ rol });
+      const rol = new Rol(req.body);
+      await rol.save();
+      res.status(201).json(rol, {message: "Rol creado satisfactoriamente"});
     } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: 'Error al obtener rol', error });
+      console.log(error);
+      res.status(500).json({ message: error.message });
     }
   },
 
-  // Actualizar un rol
-  actualizarRol: async (req, res) => {
-    const rolId = req.params.id; // Obtener el ID del rol de la URL
-    const nuevosDatos = req.body; // Obtener los nuevos datos del rol
-
+  getRoles: async (req, res) => {
     try {
-      const rol = await Rol.findByIdAndUpdate(rolId, nuevosDatos, { new: true }); // Buscar y actualizar el rol por ID
+      options.page = Number(req.query.page) || 1;
+      options.limit = Number(req.query.limit) || 10;
+      const roles = await Rol.paginate({deleted: false}, options);
+      res.json(roles);
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ message: error.message });
+    }
+  },
 
-      if (!rol) {
-        return res.status(404).json({ message: 'Rol no encontrado' });
+  getRolById: async (req, res) => {
+    try {
+      const rol = await Rol.paginate({deleted: false, _id: req.params.id}, options);
+      res.json(rol);
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ message: error.message });
+    }
+  },
+
+  updateRol: async (req, res) => {
+    try {
+      req.body.updatedAt = Date.now();
+      if(!regex.name.test(req.body.name)){
+        return res.status(500).json({message: "El nombre es inválido. Debe contener solo letras y espacios."})
       }
-
-      res.status(200).json({ message: 'Rol actualizado correctamente', rol });
+      const rol = await Rol.findByIdAndUpdate({_id: req.params.id, deleted: false}, req.body, {new: true});
+      const paginatedRol = await Rol.paginate({deleted: false, _id: rol._id}, options);
+      console.log(paginatedRol);
+      res.json(paginatedRol);
     } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: 'Error al actualizar rol', error });
+      console.log(error);
+      res.status(500).json({ message: error.message });
     }
   },
 
-  // Eliminar un rol
-  eliminarRol: async (req, res) => {
-    const rolId = req.params.id; // Obtener el ID del rol de la URL
-
+  deleteRol: async (req, res) => {
     try {
-      await Rol.findByIdAndDelete(rolId); // Buscar y eliminar el rol por ID
-
-      res.status(200).json({ message: 'Rol eliminado correctamente' });
+      const rol = await Rol.findByIdAndUpdate({_id: req.params.id, deleted: false}, {deleted: true, deletedAt: Date.now()}, {new: true});
+      res.json(rol);
     } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: 'Error al eliminar rol', error });
+      console.log(error);
+      res.status(500).json({ message: error.message });
     }
   }
 };

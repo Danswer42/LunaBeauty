@@ -26,14 +26,7 @@ const purchaseSchema = new mongoose.Schema({
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Product',
       required: true,
-      amount: {
-        type: Number,
-        required: true,
-        min: 1
-      }
     },
-    required: true,
-    min: 1
   }],
   total: {
     type: Number,

@@ -2,19 +2,14 @@ const express = require('express');
 const router = express.Router();
 const rolController = require('../controllers/rolControllers'); // Importar el controlador de roles
 
-// Ruta para crear un rol
-router.post('/roles', rolController.crearRol);
+router.post('/rol', rolController.createRol);
 
-// Ruta para obtener todos los roles
-router.get('/roles', rolController.obtenerRoles);
+router.get('/rol', rolController.getRoles);
 
-// Ruta para obtener un rol por ID
-router.get('/roles/:id', rolController.obtenerRolPorId);
+router.get('/rol/:id', rolController.getRolById);
 
-// Ruta para actualizar un rol
-router.put('/roles/:id', rolController.actualizarRol);
+router.put('/rol/:id', rolController.updateRol);
 
-// Ruta para eliminar un rol
-router.delete('/roles/:id', rolController.eliminarRol);
+router.delete('/rol/:id', rolController.deleteRol);
 
 module.exports = router;
