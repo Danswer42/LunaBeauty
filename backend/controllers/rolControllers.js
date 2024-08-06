@@ -1,4 +1,4 @@
-const Rol = require('../models/rolModels'); // Importar el modelo Rol
+const Rol = require('../models/rolModels');
 const regex = require('../tools/regex');
 const options = require('../tools/options')
 

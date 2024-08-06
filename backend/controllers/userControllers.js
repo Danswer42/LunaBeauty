@@ -17,7 +17,7 @@ const userController = {
         return res.status(400).json({ message: "El email es inválido. Debe seguir el formato email@ejemplo.com." });
       }
       if (!regex.phone.test(req.body.phone)) {
-        return res.status(400).json({ message: "El número de teléfono no es válido. Debe tener el formato XXX-XXX-XXXX" });
+        return res.status(400).json({ message: "El número de teléfono no es válido. Debe tener el formato +584123456789" });
       }
       if (!regex.password.test(req.body.password)) {
         return res.status(400).json({ message: "La contraseña no es válida. Debe tener al menos 8 caracteres, una letra mayúscula, una letra minúscula, un número y un carácter especial." });
@@ -27,7 +27,7 @@ const userController = {
       const salt = await bcrypt.genSalt(10);
       req.body.password = await bcrypt.hash(req.body.password, salt);
   
-      const rol = await Rol.findById(req.body.role);
+      const rol = await Rol.findById(req.body.rol);
       if (!rol) {
         return res.status(400).json({ message: "Rol no encontrado. Verifique el ID" });
       }

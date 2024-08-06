@@ -20,10 +20,13 @@ const categoryController = {
 
   getCategories: async (req, res) => {
     try {
-      options.page = Number(req.query.page) || 1;
-      options.limit = Number(req.query.limit) || 10;
-      const categories = await Category.paginate({deleted: false}, options);
-      res.json(categories);
+      //options.page = Number(req.query.page) || 1;
+      //options.limit = Number(req.query.limit) || 10;
+      //const categories = await Category.paginate({deleted: false}, options);
+      //res.json(categories);
+      const categories = await Category.find();
+      const categoryNames = categories.map(category => category.name);
+      res.json(categoryNames);
     } catch (error) {
       console.log(error);
       res.status(500).json({ message: error.message });

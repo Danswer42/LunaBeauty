@@ -25,6 +25,7 @@ app.get('/', (req, res)=>{
   res.send('Bienvenido a mi api rest')
 });
 
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json()); 
 app.use(express.json());
 app.use(cors());

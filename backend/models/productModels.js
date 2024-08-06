@@ -42,7 +42,6 @@ const productSchema = new mongoose.Schema({
   category: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Category',
-    default: null
   },
   images: {
     type: [String],
@@ -65,20 +64,13 @@ const productSchema = new mongoose.Schema({
   },
   creationDate: {
     type: Date,
-    default: Date.now
+    default: Date.now,
+    inmutable: true
   },
   updateDate: {
     type: Date,
     default: Date.now
   },
-  deleteDate: {
-    type: Date,
-    default: null
-  },
-  delete: {
-    type: Boolean,
-    default: false
-  }
 });
 
 

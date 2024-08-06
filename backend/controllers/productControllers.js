@@ -12,11 +12,17 @@ const productController = {
       if(!regex.description.test(req.body.description)){
         return res.status(500).json({message: "La descripción debe tener un maximo de 500 caracteres."})
       }
+      console.log(req.body)
+      console.log("category:", req.body.category)
       const categoryExists = await Category.findById(req.body.category);
+      console.log("categoryExists", categoryExists)
       if (!categoryExists) {
         return res.status(404).json({ message: "Categoria no encontrada. Verifique el ID" });
       }
-      const product = new Product(req.body, {img: req.file.path});
+      const product = new Product(req.body);
+      if(req.file){
+        product.images = req.file.path
+      }
       await product.save();
       res.status(201).json(product);
     } catch (error) {
@@ -27,10 +33,13 @@ const productController = {
 
   getProducts: async (req, res) => {
     try {
-      options.page = Number(req.query.page) || 1;
-      options.limit = Number(req.query.limit) || 10;
-      const products = await Product.paginate({deleted: false}, options);
-      res.json(products);
+      //options.page = Number(req.query.page) || 1;
+      //options.limit = Number(req.query.limit) || 10;
+      //const products = await Product.paginate({deleted: false}, options);
+      //res.json(products);
+      const products = await Product.find();
+      const productsNames = products.map(products => products.name);
+      res.json(productsNames);
     } catch (error) {
       console.log(error);
       res.status(500).json({ message: error.message });
@@ -39,7 +48,12 @@ const productController = {
   
   getProductById: async (req, res) => {
     try {
-      const product = await Product.paginate({deleted: false, _id: req.params.id}, options);
+      if(!req.params.id){
+        res.status(403).json({message: "Requiere ID"}
+        )
+      }
+      const product = await Product.findById(req.params.id);
+      //const product = await Product.paginate({deleted: false, _id: req.params.id}, options);
       res.json(product);
     } catch (error) {
       console.log(error);

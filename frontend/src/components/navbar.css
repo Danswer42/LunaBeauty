@@ -1,0 +1,24 @@
+.navbar {/*se le da tamaño y posicion al header*/
+    width: 100%;
+    height: 11.25rem;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+  }
+  
+  .icons {
+    display: flex;
+    align-items: center;
+  }
+  
+  .icons img {
+    width: 6.25rem;
+    height: 6.25rem;
+    border-radius: 100%;
+    border: 0.125rem solid #FFD700;
+  }
+
+  .links a {/*se le agrega estilo a los textos de los links*/
+    text-decoration: none;
+    color: black;
+  }
