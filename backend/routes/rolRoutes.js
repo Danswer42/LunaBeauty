@@ -8,7 +8,7 @@ router.get('/rol', rolController.getRoles);
 
 router.get('/rol/:id', rolController.getRolById);
 
-router.put('/rol/:id', rolController.updateRol);
+router.patch('/rol/:id', rolController.updateRol);
 
 router.delete('/rol/:id', rolController.deleteRol);
 

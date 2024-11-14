@@ -44,8 +44,9 @@ const userSchema = new mongoose.Schema({
     match: regex.phone
   },
   image: {
-    type: String,
-    default: null
+    type: [String],
+    default: [],
+    max: 1
   },
   email: {
     type: String,
@@ -67,7 +68,7 @@ const userSchema = new mongoose.Schema({
     default: null
   },
   purchases: {
-    type: Array,
+    type: [mongoose.Schema.Types.ObjectId],
     ref: "Purchase",
     default: []
   },

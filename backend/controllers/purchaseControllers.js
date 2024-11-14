@@ -11,35 +11,39 @@ const purchaseController = {
         return res.status(404).json({ message: "Usuario no encontrado" });
       }
   
-      const products = await Product.find({ _id: { $in: req.body.products } });
-      if (products.length !== req.body.products.length) {
-        return res.status(404).json({ message: "Producto no encontrado" });
+      const checkProduct = async (array) => {
+        if (!Array.isArray(array)) {
+            return "Error: El valor pasado no es un array";
+        }
+      
+        const onlyID = array.map(obj => obj.product); // Extrae solo la propiedad "product"
+        const record = await Product.find({ '_id': { $in: onlyID } });
+        if (!record.length || record.length !== onlyID.length) {
+            return "Producto ";
+        }
       }
       const purchase = new Purchase(req.body);
       await purchase.save();
-      const paginatedPurchase = await Purchase.paginate({deleted: false, _id: purchase._id}, options);
-      res.status(201).json(paginatedPurchase);
+      res.status(201).json(purchase);
     } catch (error) {
       console.log(error);
-      res.status(500).json({ message: error.message });
+      res.status(500).json({ message: "Error al crear la compra"});
     }
   },
 
   getPurchases: async (req, res) => {
     try {
-      options.page = Number(req.query.page) || 1;
-      options.limit = Number(req.query.limit) || 10;
-      const purchases = await Purchase.paginate({deleted: false}, options);
+      const purchases = await Purchase.find();
       res.json(purchases);
     } catch (error) {
       console.log(error);
-      res.status(500).json({ message: error.message });
+      res.status(500).json({ message: "Error al obtener la compra" });
     }
   },
 
   getPurchaseById: async (req, res) => {
     try {
-      const purchase = await Purchase.paginate({deleted: false, _id: req.params.id}, options);
+      const purchase = await Purchase.find();
       res.json(purchase);
     } catch (error) {
       console.log(error);
@@ -49,23 +53,23 @@ const purchaseController = {
 
   updatePurchase: async (req, res) => {
     try {
-      req.body.updatedAt = Date.now();
-      const purchase = await Purchase.findByIdAndUpdate({_id: req.params.id, deleted: false}, req.body, {new: true});
-      const paginatedPurchase = await Purchase.paginate({deleted: false, _id: purchase._id}, options);
-      res.json(paginatedPurchase);
+      req.body.updateDate = Date.now();
+      const purchase = await Purchase.findByIdAndUpdate({_id: req.params.id, delete: false}, req.body, {new: true});
+      await purchase.save();
+      res.json(purchase);
     } catch (error) {
       console.log(error);
-      res.status(500).json({ message: error.message });
+      res.status(500).json({ message: "Error al actualizar compra" });
     }
   },
   
   deletePurchase: async (req, res) => {
     try {
-      const purchase = await Purchase.findByIdAndUpdate({_id: req.params.id, deleted: false}, {deleted: true, deletedAt: Date.now()}, {new: true});
-      res.json(purchase);
+      await Purchase.findByIdAndDelete({_id: req.params.id});
+      res.json({ message: "Compra eliminada correctamente" });
     } catch (error) {
       console.log(error);
-      res.status(500).json({ message: error.message });
+      res.status(500).json({ message: "Error al eliminar la compra" });
     }
   }
 };

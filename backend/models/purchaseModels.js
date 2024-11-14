@@ -25,8 +25,12 @@ const purchaseSchema = new mongoose.Schema({
     product: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Product',
+      required: true },
+    amount: {
+      type: Number,
       required: true,
-    },
+      min: 0,
+      max: 1000000 }
   }],
   total: {
     type: Number,

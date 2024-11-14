@@ -38,16 +38,16 @@ const Login = () => {
     const getUsers = async() => {//aqui se soolicitan los usurios
         const res = await axios.get(URI)
         console.log(res.data);
-        setUsers(res.data)
+        setUsers(res.data.docs)
     }
 
 
 
     const compare = () => {//funcion para comparar si la entrada del usurio es igual a un usuario ya existente y poder logearse
-            if (users.find(e => e.user_name === entrada && e.password === entradaP))
-                return true;
-            else
-                return false;
+        if (users.find(e => e.user_name === entrada && e.password === entradaP))
+            return true;
+        else
+            return false;
     }
 
     return (

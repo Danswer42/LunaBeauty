@@ -24,49 +24,48 @@ const categoryController = {
       //options.limit = Number(req.query.limit) || 10;
       //const categories = await Category.paginate({deleted: false}, options);
       //res.json(categories);
-      const categories = await Category.find();
-      const categoryNames = categories.map(category => category.name);
-      res.json(categoryNames);
+      const categories = await Category.paginate({}, options);
+      res.json(categories);
     } catch (error) {
-      console.log(error);
+      console.error(error);
       res.status(500).json({ message: error.message });
     }
   },
 
   getCategoryById: async (req, res) => {
     try {
-      const category = await Category.paginate({deleted: false, _id: req.params.id}, options);
+      const categoryId = req.params.id;
+      const category = await Category.findById(categoryId);
+  
+      if (!category) {
+        return res.status(404).json({ message: 'Categoría no encontrada' });
+      }
+  
       res.json(category);
     } catch (error) {
-      console.log(error);
+      console.error(error);
       res.status(500).json({ message: error.message });
     }
   },
 
   updateCategory: async (req, res) => {
     try {
-      req.body.updatedAt = Date.now();
+      req.body.updateDate = Date.now();
       if(!regex.name.test(req.body.name)){
-        return res.status(500).json({message: "El nombre es inválido. Debe contener solo letras y espacios."})
+        return res.status(500).json({message: "El nombre no es válido"})
       }
-      const category = await Category.findByIdAndUpdate({_id: req.params.id, deleted: false}, req.body, {new: true});
-      const paginatedCategory = await Category.paginate({_id: category._id, deleted: false}, options);
-      res.json(paginatedCategory);
+      const category = await Category.findByIdAndUpdate({ _id: req.params.id }, { name: req.body.name });
+      await category.save();
+      res.json({message: 'Categoría actualizada correctamente'});
     } catch (error) {
         console.log(error);
-        res.status(500).json({ message: error.message });
+        res.status(500).json({ message: "Error al actualizar la categoria" });
     }
   },
 
   deleteCategory: async (req, res) => {
-    try {
-      const category = await Category.findByIdAndUpdate({_id: req.params.id, deleted: false}, {deleted: true, deletedAt: Date.now()}, {new: true});
-      const paginatedCategory = await Category.paginate({_id: category._id, deleted: false}, options);
-      res.json(paginatedCategory);
-    } catch (error) {
-      console.log(error);
-      res.status(500).json({ message: error.message });
-    }
+    await Category.findByIdAndDelete({_id: req.params.id});
+    res.send({message: "Categoría eliminada correctamente"});
   }
 };
 

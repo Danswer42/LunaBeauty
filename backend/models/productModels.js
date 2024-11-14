@@ -46,8 +46,8 @@ const productSchema = new mongoose.Schema({
   images: {
     type: [String],
     default: [],
-    minlength: 1,
-    maxlength: 3,
+    min: 1,
+    max: 3,
   },
   description: {
     type: String,
@@ -71,6 +71,10 @@ const productSchema = new mongoose.Schema({
     type: Date,
     default: Date.now
   },
+  delete: {
+    type: Boolean, 
+    default: false 
+  }
 });
 
 

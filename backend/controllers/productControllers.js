@@ -1,7 +1,7 @@
 const Product = require('../models/productModels');
 const Category = require('../models/categoryModels');
 const regex = require('../tools/regex');
-const options = require('../tools/options')
+const options = require('../tools/options');
 
 const productController = {
   createProduct: async (req, res) => {
@@ -27,7 +27,33 @@ const productController = {
       res.status(201).json(product);
     } catch (error) {
       console.log(error);
-      res.status(500).json({ message: error.message });
+      res.status(500).json({ message: "Error al crear el producto" });
+    }
+  },
+
+  submitImages: async (req, res) => {
+    try {
+      console.log(req.files);
+      if (!req.files) {
+        return res.status(500).json({ message: 'No se encontraron archivos' });
+      }  
+      const imgsArray = [];
+      req.files.map((file) => {
+        if(file.mimetype !== "image/png" && file.mimetype !== "image/jpg" && file.mimetype !== "image/jpeg"){
+          return res.status(500).json({message: `Imagen, ${file.filename}, no valida, solo se permite formato png, jpeg y jpg`});
+        }
+        if(file.size > 5000000 || file.size === 0){
+          return res.status(500).json({message: `Imagen, ${file.filename}, no válida, permitido 5MB max y no vacío`});
+        }
+        imgsArray.push(file.path);
+      });
+      const product = await Product.findByIdAndUpdate({_id: req.params.id, delete: false}, {images: imgsArray}, {new: true});
+      //const paginated = await Product.paginate({_id: product._id, delete: false}, options);
+      await product.save();
+      res.status(201).json(product);
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ message: "Error al subir la imagen" });
     }
   },
 
@@ -35,14 +61,17 @@ const productController = {
     try {
       //options.page = Number(req.query.page) || 1;
       //options.limit = Number(req.query.limit) || 10;
-      //const products = await Product.paginate({deleted: false}, options);
-      //res.json(products);
-      const products = await Product.find();
-      const productsNames = products.map(products => products.name);
-      res.json(productsNames);
+      const products = await Product.paginate({}, options);
+      if (!products.docs.length) {
+        return res.status(404).json({ message: "No se encontraron productos"})
+      }
+      res.json(products);
+      //const products = await Product.find();
+      //const productsNames = products.map(products => products.name);
+      //res.json(productsNames);
     } catch (error) {
       console.log(error);
-      res.status(500).json({ message: error.message });
+      res.status(500).json({ message: "Error al obtener productos" });
     }
   },
   
@@ -71,7 +100,7 @@ const productController = {
   
   updateProduct: async (req, res) => {
     try {
-      req.body.updatedAt = Date.now();
+      req.body.updateDate = Date.now();
       if(!regex.name.test(req.body.name)){
         return res.status(500).json({message: "El nombre es inválido. Debe contener solo letras y espacios."})
       }
@@ -82,48 +111,26 @@ const productController = {
       if (!categoryExists) {
         return res.status(404).json({ message: "Categoria no encontrada. Verifique el ID" });
       }
-      const product = await Product.findByIdAndUpdate({_id: req.params.id, deleted: false}, req.body, {new: true});
-      const paginatedProduct = await Product.paginate({_id: product._id, deleted: false}, options);
-      res.json(paginatedProduct);
+      console.log(req.body)
+      console.log("category:", req.body.category)
+      const product = await Product.findByIdAndUpdate({_id: req.params.id, delete: false}, req.body, {new: true});
+      //const paginatedProduct = await Product.paginate({_id: product._id, deleted: false}, options);
+      console.log("categoryExists", categoryExists)
+      res.json(product);
     } catch (error) {
       console.log(error);
-      res.status(500).json({ message: error.message });
-    }
-  },
-
-  submitImage: async (req, res) => {
-    try {
-      console.log(req.files);
-      if(req.files.length === 0){
-        return res.status(500).json({message: "Imagen no encontrada"});
-      }
-      const imgsArray = [];
-      req.files.map((file) => {
-        if(file.mimetype !== "image/png" && file.mimetype !== "image/jpg" && file.mimetype !== "image/jpeg"){
-          return res.status(500).json({message: `Imagen, ${file.filename}, no valida, solo se permite formato png, jpeg y jpg`});
-        }
-        if(file.size > 5000000 || file.size === 0){
-          return res.status(500).json({message: `Imagen, ${file.filename}, no valida, permitido 5MB max y no vacío`});
-        }
-        imgsArray.push(file.path);
-      });
-      const product = await Product.findByIdAndUpdate({_id: req.params.id, deleted: false}, {images: imgsArray}, {new: true});
-      const paginated = await Product.paginate({_id: product._id, deleted: false}, options);
-      res.status(201).json(paginated, { message: 'Imagen subida correctamente'});
-    } catch (error) {
-      console.log(error);
-      res.status(500).json({ message: "Error al subir la imagen" });
+      res.status(500).json({ message: "Error al actualizar el producto" });
     }
   },
 
   deleteProduct: async (req, res) => {
     try {
-      const product = await Product.findByIdAndUpdate({_id: req.params.id, deleted: false}, {deleted: true, deletedAt: Date.now()}, {new: true});
-      const paginatedProduct = await Product.paginate({_id: product._id, deleted: false}, options);
-      res.json(paginatedProduct);
+      const product = await Product.findByIdAndUpdate({_id: req.params.id, delete: false}, {delete: true, deleteDate: Date.now()}, {new: true});
+      await product.save();
+      res.json({ message:"Producto eliminado correctamente" });
     } catch (error) {
       console.log(error);
-      res.status(500).json({ message: error.message });
+      res.status(500).json({ message: "Error al eliminar el producto" });
     }
   }
 };
